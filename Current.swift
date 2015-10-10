@@ -18,13 +18,13 @@ struct Current {
     var icon: UIImage?
     
     init(weatherDictionary: NSDictionary) {
-        let currentWeather: NSDictionary = weatherDictionary["currently"] as NSDictionary
+        let currentWeather: NSDictionary = weatherDictionary["currently"] as! NSDictionary
         self.temperature = currentWeather["temperature"] as? Int
         self.humidity = currentWeather["humidity"] as? Double
         self.precipProbability = currentWeather["precipProbability"] as? Double
         self.summary = currentWeather["summary"] as? String
-        self.currentTime = dateStringFromUNIXTime(currentWeather["time"] as Int)
-        self.icon = weatherIconFromString(currentWeather["icon"] as String)
+        self.currentTime = dateStringFromUNIXTime(currentWeather["time"] as! Int)
+        self.icon = weatherIconFromString(currentWeather["icon"] as! String)
     }
     
     func dateStringFromUNIXTime(unixTIme: Int) -> String {

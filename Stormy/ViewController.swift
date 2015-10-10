@@ -38,56 +38,55 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
             locationManager.requestWhenInUseAuthorization()
             locationManager.startUpdatingLocation()
         } else {
-            println("Location services are not enabled");
+            print("Location services are not enabled");
         }
         
         // Do any additional setup after loading the view, typically from a nib.
         refreshActivity.hidden = true
         getWeatherDataForDate(datePicker.date)
-        println(datePicker.date)
+        print(datePicker.date)
 
     }
 
     //CoreLocation Delegate Methods
-    func locationManager(manager: CLLocationManager!, didFailWithError error: NSError!) {
+    func locationManager(manager: CLLocationManager, didFailWithError error: NSError) {
         if(error.code == 0 && error.domain == "kCLErrorDomain") {
             
         }
-        else if ((error) != nil) {
-            locationManager.stopUpdatingLocation()
-            println(error)
-        }
+        
+        locationManager.stopUpdatingLocation()
+        print(error)
     }
     
-    func locationManager(manager: CLLocationManager!, didUpdateLocations locations: [AnyObject]!) {
-        var locationArray = locations as NSArray
-        var locationObj = locationArray.lastObject as CLLocation
-        var coord = locationObj.coordinate
-        println(coord.latitude as Double)
-        println(coord.longitude as Double)
+    func locationManager(manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        let locationArray = locations as NSArray
+        let locationObj = locationArray.lastObject as! CLLocation
+        let coord = locationObj.coordinate
+        print(coord.latitude as Double)
+        print(coord.longitude as Double)
         self.xCoord = coord.latitude
         self.yCoord = coord.longitude
         
-        var geoCoder = CLGeocoder()
-        var location = CLLocation(latitude: self.xCoord!, longitude: self.yCoord!)
+        let geoCoder = CLGeocoder()
+        let location = CLLocation(latitude: self.xCoord!, longitude: self.yCoord!)
         
         geoCoder.reverseGeocodeLocation(location, completionHandler: { (placemarks, error) -> Void in
-            let placeArray = placemarks as [CLPlacemark]
+            let placeArray = placemarks! as [CLPlacemark]
             
             // Place details
             var placeMark: CLPlacemark!
             placeMark = placeArray[0]
             
-            if let city = placeMark.addressDictionary["City"] as? NSString {
-                println(city)
-                if let state = placeMark.addressDictionary["State"] as? NSString {
-                    if let country = placeMark.addressDictionary["Country"] as? NSString {
+            if let city = placeMark.addressDictionary?["City"] as? NSString {
+                print(city)
+                if let state = placeMark.addressDictionary?["State"] as? NSString {
+                    if let country = placeMark.addressDictionary?["Country"] as? NSString {
                         self.cityLabel.text = "\(city), \(state), \(country)"
                     }
                 }
             }
-            else if let locationName = placeMark.addressDictionary["Name"] as? NSString {
-                self.cityLabel.text = locationName
+            else if let locationName = placeMark.addressDictionary?["Name"] as? NSString {
+                self.cityLabel.text = locationName as String
             }
             else {
                 self.cityLabel.text = "Unknown"
@@ -98,7 +97,7 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
     
     func getWeatherDataForDate(date: NSDate) {
         
-        var unixTime: Int = Int(date.timeIntervalSince1970)
+        let unixTime: Int = Int(date.timeIntervalSince1970)
         var baseURL: NSURL
         if xCoord != nil {
             baseURL = NSURL(string: "https://api.forecast.io/forecast/\(apiKey)/\(xCoord!),\(yCoord!),\(unixTime)")!
@@ -106,14 +105,20 @@ class ViewController: UIViewController, CLLocationManagerDelegate {
         else {
             baseURL = NSURL(string: "https://api.forecast.io/forecast/\(apiKey)/37.6442888,-121.8016367,\(unixTime)")!
         }
-        var sharedSession = NSURLSession.sharedSession()
-        var downloadTask: NSURLSessionDownloadTask = sharedSession.downloadTaskWithURL(baseURL, completionHandler: { (location: NSURL!, response: NSURLResponse!, error: NSError!) -> Void in
+        let sharedSession = NSURLSession.sharedSession()
+        let downloadTask: NSURLSessionDownloadTask = sharedSession.downloadTaskWithURL(baseURL, completionHandler: { (location: NSURL?, response: NSURLResponse?, error: NSError?) -> Void in
             if error == nil {
-                let dataObject = NSData(contentsOfURL: location)
-                let weatherDictionary : NSDictionary = NSJSONSerialization.JSONObjectWithData(dataObject!, options: nil, error: nil) as NSDictionary
-                println(weatherDictionary)
-                println(unixTime)
-                let weather : Current = Current(weatherDictionary: weatherDictionary)
+                let dataObject = NSData(contentsOfURL: location!)
+                var weatherDictionary : NSDictionary?
+                do {
+                weatherDictionary = try NSJSONSerialization.JSONObjectWithData(dataObject!, options: NSJSONReadingOptions.AllowFragments) as? NSDictionary
+                }
+                catch {
+                    
+                }
+                print(weatherDictionary)
+                print(unixTime)
+                let weather : Current = Current(weatherDictionary: weatherDictionary!)
     
                 dispatch_async(dispatch_get_main_queue(), { () -> Void in
                     if(weather.temperature != nil) {
